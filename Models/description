@@ -1,0 +1,5 @@
+This folder contains 3 models: 
+
+GRU: 23 ep, ACC 63.4%, loss: 0.838
+LSTM: 18 ep, ACC 63.9%, loss: 0.845
+BERT: 8 ep, Acc 84.6%, loss: 0.43
