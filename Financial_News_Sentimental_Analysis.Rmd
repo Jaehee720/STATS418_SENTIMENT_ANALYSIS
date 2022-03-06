@@ -1,0 +1,305 @@
+---
+title: "Financial_News_Sentimental_Analysis"
+author: "JungHwan Park"
+date: "3/5/2022"
+output: pdf_document
+---
+
+
+```{r}
+library(readr)
+library(dplyr)
+library(tm)
+library(NLP)
+library(proxy)
+library(RTextTools)
+library(fpc)   
+library(wordcloud)
+library(cluster)
+library(tm)
+library(stringi)
+library(wordcloud2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(tidytext)
+library(topicmodels)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(caTools)
+library(readr)
+library(tidytext)
+data <- read_csv("all-data.csv")
+```
+
+Data cleaning
+```{r}
+data_pos <- data %>% filter(Sentiment == "positive")
+data_neg <- data %>% filter(Sentiment == "negative")
+data_neu <- data %>% filter(Sentiment == "neutral")
+
+cat(data_pos$text, file = "data_pos.txt")
+cat(data_neg$text, file = "data_neg.txt")
+cat(data_neu$text, file = "data_neu.txt")
+
+#texts_names<-list.files("text")
+#texts_names<-paste0("text/",texts_names)
+#texts<-lapply(texts_names,readLines)
+
+cname_stat418 = "C:/Users/JUNGHWAN PARK/Downloads/Financial_News"
+data_dtm_Corp <-VCorpus(DirSource(cname_stat418))
+#inspect(amz_all_dtm_Corp)
+
+data_dtm_Corp[[1]]$meta$id <- "positive"
+data_dtm_Corp[[2]]$meta$id <- "negative"
+data_dtm_Corp[[3]]$meta$id <- "neutral"
+```
+
+```{r}
+f <- function (x) {gsub("[^[:alnum:]]", ' ', x)}   # function for erasing alphanumeric characters
+data_dtm_Corp <- tm_map(data_dtm_Corp,f)
+```
+* Erased non-alphanumeric characters.
+
+```{r}
+#toSpace<-content_transformer(function(x, pattern) gsub(pattern, " ", x)) 
+data_dtm_Corp<-tm_map(data_dtm_Corp, tolower)
+#inspect(data_dtm_Corp)
+```
+
+* to lower cases
+
+```{r}
+data_dtm_Corp<-tm_map(data_dtm_Corp, removeNumbers)
+#inspect(data_dtm_Corp)
+```
+* Removed numbers
+
+```{r}
+data_dtm_Corp<-tm_map(data_dtm_Corp, removePunctuation) 
+#inspect(data_dtm_Corp)
+```
+* Remove punctuations.
+
+```{r}
+data_dtm_Corp <- tm_map(data_dtm_Corp, removeWords, stopwords("english")) 
+#inspect(data_dtm_Corp)
+```
+* Remove English Stopwords.
+
+```{r}
+data_dtm_Corp <- tm_map(data_dtm_Corp, stripWhitespace) 
+#inspect(data_dtm_Corp)
+```
+* Strip whitespace
+
+```{r}
+data_dtm_Corp<-tm_map(data_dtm_Corp, stemDocument) 
+#inspect(data_dtm_Corp)
+```
+* Stemming
+```{r}
+data_dtm_Corp <- tm_map(data_dtm_Corp, PlainTextDocument)
+#inspect(data_dtm_Corp)
+```
+
+```{r}
+library(tm)
+data_dtm_Corp[[1]]$meta$id <- "positive"
+data_dtm_Corp[[2]]$meta$id <- "negative"
+data_dtm_Corp[[3]]$meta$id <- "neutral"
+
+data_dtm <-DocumentTermMatrix(data_dtm_Corp)
+#head(t(as.matrix(data_dtm)))
+inspect(data_dtm)
+```
+
+- Explore DTM 
+-- Frequent terms
+```{r}
+findFreqTerms(data_dtm, lowfreq= 400, highfreq= Inf)
+```
+
+-- Remove sparse terms
+```{r}
+data_dtm <- removeSparseTerms(data_dtm, 0.9)
+inspect(data_dtm)
+```
+
+```{r}
+library(Rgraphviz)
+plot(data_dtm,terms=findFreqTerms(data_dtm, lowfreq=400),corThreshold=0.6)
+```
+- tibble for the text
+```{r}
+#data_df = tibble(id=data$Sentiment,line=1:length(data_dtm_Corp[[1]]$content),text = amz_all_sectors_Corp$content$content)
+
+#gandhi_df_1 = tibble(id=corpus_All[[1]]$meta$id,line=1:length(corpus_All[[1]]$content),text = corpus_All[[
+
+#all_sectors_df
+
+
+corpus_All<- data$text %>% VectorSource() %>% VCorpus()
+
+
+corpus_All <- tm_map(corpus_All,f)
+
+corpus_All<-tm_map(corpus_All, tolower)
+
+corpus_All<-tm_map(corpus_All, removeNumbers)
+
+corpus_All<-tm_map(corpus_All, removePunctuation) 
+
+corpus_All <- tm_map(corpus_All, removeWords, stopwords("english")) 
+
+corpus_All <- tm_map(corpus_All, stripWhitespace) 
+
+corpus_All<-tm_map(corpus_All, stemDocument) 
+
+corpus_All <- tm_map(corpus_All, PlainTextDocument)
+
+#inspect(corpus_All)
+data_df = tibble(id=data$Sentiment,line=1:length(data$text),text = data$text)
+data_df_unnest <- data_df %>% unnest_tokens(word,text)
+```
+
+- WordCloud for all text
+```{r}
+data_td <- data_df_unnest %>% anti_join(stop_words) 
+
+t.data<- data.frame(data_td %>% count(word))
+
+wordcloud2(t.data, minSize = 2,color = "random-light", backgroundColor = "grey")
+```
+
+- WordCloud for positive text
+```{r}
+t.positive <- data.frame(data_td %>% filter(id == "positive") %>% count(word))
+
+wordcloud2(t.positive, minSize = 20,color = "random-light", backgroundColor = "grey")
+```
+
+- WordCloud for negative text
+```{r}
+t.negative <- data.frame(data_td %>% filter(id == "negative") %>% count(word))
+
+wordcloud2(t.negative, minSize = 20,color = "random-light", backgroundColor = "grey")
+```
+
+- WordCloud for neutral text
+```{r}
+t.neutral <- data.frame(data_td %>% filter(id == "neutral") %>% count(word))
+
+wordcloud2(t.neutral, minSize = 20,color = "random-light", backgroundColor = "grey")
+```
+
+
+# Sentiment Analysis
+
+-- Load sentiments
+```{r}
+library(syuzhet)
+
+bing <- get_sentiments("bing")
+afinn <- get_sentiments("afinn")
+nrc_positive <- get_sentiments("nrc") %>% filter(sentiment == "positive")
+nrc_negative <- get_sentiments("nrc") %>% filter(sentiment == "negative")
+nrc_surprise <- get_sentiments("nrc") %>% filter(sentiment == "surprise")
+nrc_anticipation <- get_sentiments("nrc") %>% filter(sentiment == "anticipation")
+nrc_disgust <- get_sentiments("nrc") %>% filter(sentiment == "disgust")
+nrc_fear <- get_sentiments("nrc") %>% filter(sentiment == "fear")
+nrc_sadness <- get_sentiments("nrc") %>% filter(sentiment == "sadness")
+nrc_anger <- get_sentiments("nrc") %>% filter(sentiment == "anger")
+nrc_joy <- get_sentiments("nrc") %>% filter(sentiment == "joy")
+nrc_trust <- get_sentiments("nrc") %>% filter(sentiment == "trust")
+
+nrc_data <- get_nrc_sentiment(data_td$word)
+head(nrc_data)
+```
+
+```{r}
+#library(ggplot2)
+pie_graph_data <- data.frame(emotion = names(sort(colSums(prop.table(nrc_data[, 9:10])))), proportion = colSums(prop.table(nrc_data[, 9:10])))
+ggplot(pie_graph_data, aes(x="", y=proportion, fill=emotion))+geom_bar(width = 1, stat = "identity")+coord_polar("y", start=0)+scale_fill_brewer(palette="Blues")+theme_minimal()
+```
+```{r}
+barplot<-data.frame(emotion = sort(colSums(prop.table(nrc_data[,1:8]))))
+barplot(barplot$emotion,names =row.names(barplot),las=2)
+```
+
+```{r}
+TRY1_data<- data_df %>% unnest_tokens(word, text) %>% inner_join(afinn)%>% count(word, sort = TRUE)
+TRY1_data %>% filter(n > 30) %>% mutate(word = reorder(word, n)) %>% ggplot(aes(word, n)) + geom_col() + xlab(NULL) + coord_flip()
+```
+
+```{r}
+TRY2_data <- data_df %>% unnest_tokens(word, text) %>% inner_join(bing) %>% count(word, sort = TRUE)
+TRY2_data %>% filter(n > 30) %>% mutate(word = reorder(word, n)) %>% ggplot(aes(word, n)) + geom_col() + xlab(NULL) + coord_flip()
+```
+
+- Sentimental analysis by Positive, negative, neutral
+```{r}
+data_positive_td <- data_td %>% filter(id=="positive")
+data_negative_td <- data_td %>% filter(id=="negative")
+data_neutral_td <- data_td %>% filter(id=="neutral")
+
+nrc_positive_data <- get_nrc_sentiment(data_positive_td$word)
+nrc_negative_data <- get_nrc_sentiment(data_negative_td$word)
+nrc_neutral_data <- get_nrc_sentiment(data_neutral_td$word)
+```
+
+1. Positive data composition
+```{r}
+#library(ggplot2)
+pie_graph_positive_data <- data.frame(emotion = names(sort(colSums(prop.table(nrc_positive_data[, 9:10])))), proportion = colSums(prop.table(nrc_positive_data[, 9:10])))
+ggplot(pie_graph_positive_data, aes(x="", y=proportion, fill=emotion))+geom_bar(width = 1, stat = "identity")+coord_polar("y", start=0)+scale_fill_brewer(palette="Blues")+theme_minimal()
+```
+
+```{r}
+barplot_positive <-data.frame(emotion = sort(colSums(prop.table(nrc_positive_data[,1:8]))))
+barplot(barplot_positive$emotion,names =row.names(barplot),las=2)
+```
+2. Negative data composition
+```{r}
+#library(ggplot2)
+pie_graph_negative_data <- data.frame(emotion = names(sort(colSums(prop.table(nrc_negative_data[, 9:10])))), proportion = colSums(prop.table(nrc_negative_data[, 9:10])))
+ggplot(pie_graph_negative_data, aes(x="", y=proportion, fill=emotion))+geom_bar(width = 1, stat = "identity")+coord_polar("y", start=0)+scale_fill_brewer(palette="Blues")+theme_minimal()
+```
+
+```{r}
+barplot_negative <-data.frame(emotion = sort(colSums(prop.table(nrc_negative_data[,1:8]))))
+barplot(barplot_negative$emotion,names =row.names(barplot),las=2)
+```
+3. Neutral data composition
+```{r}
+#library(ggplot2)
+pie_graph_neutral_data <- data.frame(emotion = names(sort(colSums(prop.table(nrc_neutral_data[, 9:10])))), proportion = colSums(prop.table(nrc_neutral_data[, 9:10])))
+ggplot(pie_graph_neutral_data, aes(x="", y=proportion, fill=emotion))+geom_bar(width = 1, stat = "identity")+coord_polar("y", start=0)+scale_fill_brewer(palette="Blues")+theme_minimal()
+```
+
+```{r}
+barplot_neutral <-data.frame(emotion = sort(colSums(prop.table(nrc_neutral_data[,1:8]))))
+barplot(barplot_neutral$emotion,names =row.names(barplot),las=2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
