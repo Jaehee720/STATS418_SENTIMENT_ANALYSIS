@@ -4,7 +4,7 @@
 
 418_EDA.ipynb & 418_EDA.pdf: These files show our EDA part using R.
 
-418_project_models.ipynb: This files shows how we created our model using python.
+418_project_models.ipynb: This file shows how we created our model using python.
 
 Models Folder: Our final models are under this folder.
 
