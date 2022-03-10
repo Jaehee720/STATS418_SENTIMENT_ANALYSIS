@@ -1,6 +1,8 @@
 # STATS_418_Project
 ## Name: Harrison DiStefano, Jaehee Jeong, Lisa Kaunitz, Junghwan Park, David Sun
 
+418_final_report: It's our final report.
+
 418_Presentation: It's our presentation slide deck.
 
 418_initial_report.ipynb: It's the initial report that we submitted in the middle of this class.
