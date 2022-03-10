@@ -14,3 +14,5 @@
 Models Folder: Our final models are under this folder.
 
 sentimentapp Folder: There are python files for our flask app.
+
+all-data.csv: It's our dataset.
